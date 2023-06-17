@@ -81,12 +81,18 @@
     const updatedPost = await res.json()
 
     const postsValue = posts.value
-    postsValue.map(post => {
+
+
+    // 為了防止資料更動後，Vue 畫面上並未更新，因為 Vue 不覺得資料有變動(記憶體位置未改變)
+    // 對後端資料 CRUD 時，建議使用 shallow copy
+    const dummyPostsValue = [...postsValue] // 變更記憶體位置
+    dummyPostsValue.map(post => {
       if (post.id === updatedPost.id) {
-        const index = postsValue.indexOf(post)
-        postsValue[index] = updatedPost
+        const index = dummyPostsValue.indexOf(post)
+        dummyPostsValue[index] = updatedPost
       }
     });
+    posts.value = dummyPostsValue // 把新記憶體位置的資料重新帶入
     title.value = ''
     body.value = ''
     post_id.value = 0
