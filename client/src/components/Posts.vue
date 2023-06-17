@@ -13,7 +13,7 @@
     <div v-for="post in posts" :key="post.id">
       <h5>{{post.id}}.{{ post.title }}</h5>
       <p>{{ post.body }}</p>
-      <button @click="editPost(post.id)">Edit</button>
+      <button @click="editPost(post)">Edit</button>
       <button @click="deletePost(post.id)">Delete</button>
     </div>
   </div>
@@ -47,19 +47,57 @@
     })
 
     const data = await res.json()
-    
+
     posts.value.push(data)
     title.value = ''
     body.value = ''
     post_id.value = 0
   }
 
+  const editPost = (post) => {
+    isEditing.value = true
+    title.value = post.title
+    body.value = post.body
+    post_id.value = post.id
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
+  } 
+
   const updatePost = async() => {
-    return true;
+    const res = await fetch(`${API_URL}/${post_id.value}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        title: title.value,
+        body: body.value
+      })
+    });
+
+    const updatedPost = await res.json()
+
+    const postsValue = posts.value
+    postsValue.map(post => {
+      if (post.id === updatedPost.id) {
+        const index = postsValue.indexOf(post)
+        postsValue[index] = updatedPost
+      }
+    });
+    title.value = ''
+    body.value = ''
+    post_id.value = 0
+    isEditing.value = false
   }
 
   const cancelEdit = () => {
-    return true;
+    title.value = ''
+    body.value = ''
+    post_id.value = ''
+    isEditing.value = false
   }
 
   const deletePost = async(id) => {
