@@ -19,99 +19,99 @@
   </div>
 </template>
 
-<script setup>
-  import { ref, onMounted } from 'vue';
-
-  const posts = ref([])
-  const title = ref('')
-  const body = ref('')
-  const post_id = ref(0)
-  const isEditing = ref(false)
-  const API_URL = 'http://localhost:3000/posts';
-
-  onMounted(async() => {
-    const res = await fetch(API_URL)
-    posts.value = await res.json()
-  })
-
-  const createPost = async() => {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        title: title.value,
-        body: body.value
-      })
-    })
-
-    const data = await res.json()
-
-    posts.value.push(data)
-    title.value = ''
-    body.value = ''
-    post_id.value = 0
-  }
-
-  const editPost = (post) => {
-    isEditing.value = true
-    title.value = post.title
-    body.value = post.body
-    post_id.value = post.id
-
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    })
-  } 
-
-  const updatePost = async() => {
-    const res = await fetch(`${API_URL}/${post_id.value}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        title: title.value,
-        body: body.value
-      })
-    });
-
-    const updatedPost = await res.json()
-
-    const postsValue = posts.value
-
-
-    // 為了防止資料更動後，Vue 畫面上並未更新，因為 Vue 不覺得資料有變動(記憶體位置未改變)
-    // 對後端資料 CRUD 時，建議使用 shallow copy
-    const dummyPostsValue = [...postsValue] // 變更記憶體位置
-    dummyPostsValue.map(post => {
-      if (post.id === updatedPost.id) {
-        const index = dummyPostsValue.indexOf(post)
-        dummyPostsValue[index] = updatedPost
+<script>
+  export default{
+    data () {
+      return {
+        posts: [],
+        title: '',
+        body: '',
+        post_id: 0,
+        isEditing: false,
+        API_URL: 'http://localhost:3000/posts'
       }
-    });
-    posts.value = dummyPostsValue // 把新記憶體位置的資料重新帶入
-    title.value = ''
-    body.value = ''
-    post_id.value = 0
-    isEditing.value = false
-  }
+    },
+    methods: {
+      async createPost() {
+        const res = await fetch(this.API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: this.title,
+            body: this.body
+          })
+        });
 
-  const cancelEdit = () => {
-    title.value = ''
-    body.value = ''
-    post_id.value = ''
-    isEditing.value = false
-  }
+        const data = await res.json();
 
-  const deletePost = async(id) => {
-    await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE'
-    })
+        this.title = '';
+        this.body = '';
+        this.post_id = 0;
+        this.posts.push(data);
+      },
+      editPost(post) {
+        this.isEditing = true
+        this.title = post.title
+        this.body = post.body
+        this.post_id = post.id
 
-    posts.value = posts.value.filter(post => post.id !== id)
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        })
+      },
+      async updatePost() {
+        const res = await fetch(`${this.API_URL}/${this.post_id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: this.title,
+            body: this.body
+          })
+        });
+
+        const updatedPost = await res.json()
+
+        const postsValue = this.posts
+
+
+        // 為了防止資料更動後，Vue 畫面上並未更新，因為 Vue 不覺得資料有變動(記憶體位置未改變)
+        // 對後端資料 CRUD 時，建議使用 shallow copy
+        const dummyPostsValue = [...postsValue] // 變更記憶體位置
+        dummyPostsValue.map(post => {
+          if (post.id === updatedPost.id) {
+            const index = dummyPostsValue.indexOf(post)
+            dummyPostsValue[index] = updatedPost
+          }
+        });
+        this.posts = dummyPostsValue // 把新記憶體位置的資料重新帶入
+        this.title = ''
+        this.body = ''
+        this.post_id = 0
+        this.isEditing = false
+      },
+      cancelEdit() {
+        this.title = ''
+        this.body = ''
+        this.post_id = ''
+        this.isEditing = false
+      },
+      async deletePost(post_id) {
+        await fetch(`${this.API_URL}/${post_id}`, {
+          method: 'DELETE'
+        })
+
+        return this.posts = this.posts.filter(post => post.id !== post_id)
+      }
+    },
+    async mounted() {
+      const res = await fetch(this.API_URL)
+      this.posts = await res.json()
+    }
   }
 </script>
 
